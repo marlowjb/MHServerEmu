@@ -1,4 +1,6 @@
-﻿using MHServerEmu.Core.Collisions;
+﻿using Gazillion;
+using MHServerEmu.Games.GameData.LiveTuning;
+using MHServerEmu.Core.Collisions;
 using MHServerEmu.Core.Extensions;
 using MHServerEmu.Core.Helpers;
 using MHServerEmu.Core.Logging;
@@ -570,6 +572,24 @@ namespace MHServerEmu.Games.Powers
             CalculateResultDamageCriticalModifier(results, target);
 
             CalculateResultDamageMetaGameModifier(results, target);
+
+            WorldEntity ultimateOwner = Game.EntityManager.GetEntity<WorldEntity>(UltimateOwnerId);
+            if (ultimateOwner is Avatar avatar)
+            {
+                float avatarDamageMultiplier = LiveTuningManager.GetLiveAvatarTuningVar(
+                    avatar.AvatarPrototype,
+                    AvatarEntityTuningVar.eAETV_DamagePct);
+                avatarDamageMultiplier = (avatarDamageMultiplier == 0f) ? 1.0f : avatarDamageMultiplier;
+
+                for (DamageType damageType = 0; damageType < DamageType.NumDamageTypes; damageType++)
+                {
+                    if ((float)results.Properties[PropertyEnum.Damage, damageType] > 0)
+                    {
+                        float originalDamage = (float)results.Properties[PropertyEnum.Damage, damageType];
+                        results.Properties[PropertyEnum.Damage, damageType] *= avatarDamageMultiplier;
+                    }
+                }
+            }
 
             CalculateResultDamageLevelScaling(results, target);
 
